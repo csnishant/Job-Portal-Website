@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon index.js",
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm run build",
-    "start": "npm run start"
+    "build": "echo 'No build process needed for backend'"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
