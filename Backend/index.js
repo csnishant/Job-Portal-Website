@@ -19,20 +19,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const corsOptions = {
-  origin: [
-    "https://job-hunt-fullstack.onrender.com", // Backend URL (if needed)
-    "http://localhost:5173", // Local development frontend
-    "https://jobhunt7.netlify.app", // Deployed frontend on Netlify
-  ],
-  credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+  origin: "http://localhost:5173",
+  credentials: true,
 };
 app.use(cors(corsOptions));
-
-// const corsOptions = {
-//   origin: "http://localhost:5173",
-//   credentials: true,
-// };
-// app.use(cors(corsOptions));
 
 const PORT = process.env.PORT || 3000;
 
