@@ -91,7 +91,7 @@ export const login = async (req, res) => {
         secure: process.env.NODE_ENV === "production", // Ensure this is true in production
       })
       .json({
-        message: `Welcome back ${user.fullName}`,
+        message: `Welcome back ${user.fullname}`,
         user,
         success: true,
       });
