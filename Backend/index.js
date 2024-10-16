@@ -21,7 +21,7 @@ app.use(cookieParser());
 // CORS Configuration
 const allowedOrigins = [
   "http://localhost:5173", // Local development
-  "https://jolly-unicorn-bbddc7.netlify.app", // Netlify deployment
+  "https://job-portal-website-p1.netlify.app/", // Netlify deployment
 ];
 
 const corsOptions = {
