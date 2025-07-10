@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "../shared/Navbar";
 import { Label } from "@radix-ui/react-label";
 import { Input } from "../ui/input";
@@ -11,22 +10,25 @@ import { USER_API_END_POINT } from "@/utils/constant";
 import { toast } from "sonner";
 import { useDispatch, useSelector } from "react-redux";
 import { setLoading, setUser } from "@/redux/authSlice";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, Lock, UserRound } from "lucide-react";
+
 const Login = () => {
   const [input, setInput] = useState({
     email: "",
     password: "",
     role: "",
   });
-  const { loading,user } = useSelector((store) => store.auth);
+
+  const { loading, user } = useSelector((store) => store.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
   const changeEventHandler = (e) => {
     setInput({ ...input, [e.target.name]: e.target.value });
   };
+
   const submitHandler = async (e) => {
     e.preventDefault();
-
     try {
       dispatch(setLoading(true));
       const res = await axios.post(`${USER_API_END_POINT}/login`, input, {
@@ -41,94 +43,109 @@ const Login = () => {
         toast.success(res.data.message);
       }
     } catch (error) {
-      console.log(error);
       toast.error(error.response.data.message);
     } finally {
       dispatch(setLoading(false));
     }
   };
 
-    useEffect(() => {
-      if (user) {
-        navigate("/");
-      }
-    }, []);
-  return (
-    <div>
-      <Navbar />
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, []);
 
-      <div className="flex items-center justify-center max-w-7xl mx-auto">
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="flex justify-center items-center px-4 sm:px-0">
         <form
           onSubmit={submitHandler}
-          className=" w-1/2 border my-10 p-4 rounded-md shadow-lg shadow-pink-500/50 cursor-pointer transition-transform duration-300 hover:shadow-indigo-500/50  ">
-          <h1 className="font-bold text-xl mb-5"> Login</h1>
+          className="w-full max-w-md mt-10 bg-white rounded-xl shadow-md p-6 sm:p-8 space-y-6 transition-all duration-300">
+          <h2 className="text-2xl font-bold text-center text-gray-800">
+            Login
+          </h2>
 
+          {/* Email */}
           <div>
-            <Label>Email</Label>
-            <Input
-              type="email"
-              value={input.email}
-              name="email"
-              onChange={changeEventHandler}
-              autoComplete="email"
-              placeholder="user@gmail.com"></Input>
+            <Label className="text-sm text-gray-600">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
+              <Input
+                type="email"
+                name="email"
+                value={input.email}
+                onChange={changeEventHandler}
+                placeholder="you@example.com"
+                className="pl-9"
+                autoComplete="email"
+              />
+            </div>
           </div>
 
+          {/* Password */}
           <div>
-            <label>Password</label>
-            <Input
-              type="password"
-              value={input.password}
-              name="password"
-              onChange={changeEventHandler}
-              autoComplete="password"
-              placeholder="&T@hbhbc2342"></Input>
+            <Label className="text-sm text-gray-600">Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
+              <Input
+                type="password"
+                name="password"
+                value={input.password}
+                onChange={changeEventHandler}
+                placeholder="••••••••"
+                className="pl-9"
+                autoComplete="current-password"
+              />
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <RadioGroup className="flex items-center gap-4 my-5 ">
-              <div className="flex items-center space-x-2">
-                <Input
+
+          {/* Role */}
+          <div>
+            <Label className="text-sm text-gray-600 mb-2 block">Role</Label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
                   type="radio"
                   name="role"
                   value="student"
-                  checked={input.role == "student"}
+                  checked={input.role === "student"}
                   onChange={changeEventHandler}
-                  className="cursor-pointer"
                 />
-                <Label htmlFor="r1">Student</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Input
+                Student
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
                   type="radio"
                   name="role"
                   value="recruiter"
-                  checked={input.role == "recruiter"}
+                  checked={input.role === "recruiter"}
                   onChange={changeEventHandler}
-                  className="cursor-pointer"
                 />
-                <Label htmlFor="r2">Recruiter</Label>
-              </div>
-            </RadioGroup>
+                Recruiter
+              </label>
+            </div>
           </div>
 
+          {/* Submit Button */}
           {loading ? (
-            // agr loading true hua
-            <Button className="w-full my-4">
-              <Loader2 className="mr-2 h-4 w-3 animate-spin" /> please wait
+            <Button disabled className="w-full">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Please wait...
             </Button>
           ) : (
-            // false hua
-            <Button type="submit" className="w-full my-4">
+            <Button type="submit" className="w-full">
               Login
             </Button>
           )}
 
-          <span className="text-sm">
+          {/* Redirect */}
+          <p className="text-sm text-center text-gray-600">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-blue-600">
+            <Link to="/signup" className="text-blue-600 hover:underline">
               Signup
             </Link>
-          </span>
+          </p>
         </form>
       </div>
     </div>

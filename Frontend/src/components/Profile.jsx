@@ -11,76 +11,95 @@ import { useSelector } from "react-redux";
 import useGetAppliedJobs from "@/hooks/useGetAppliedJobs";
 
 const isResume = true;
+
 const Profile = () => {
   useGetAppliedJobs();
   const [open, setOpen] = useState(false);
   const { user } = useSelector((store) => store.auth);
 
   return (
-    <div>
+    <div className="bg-gray-50 min-h-screen">
       <Navbar />
-      <div className="max-w-4xl mx-auto bg-white border border-gray-200 rounded-2xl my-5 p-8">
-        <div className="flex justify-between">
+
+      {/* Profile Info Card */}
+      <div className="max-w-4xl mx-auto bg-white shadow-md rounded-2xl my-6 px-4 py-6 sm:px-8 sm:py-10">
+        {/* Top Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          {/* Avatar + Info */}
           <div className="flex items-center gap-4">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={user?.profile?.profilePhoto} />
+            <Avatar className=" h-20  w-20 sm:h-24 sm:w-24">
+              <AvatarImage  className="object-cover" src={user?.profile?.profilePhoto} />
             </Avatar>
             <div>
-              <h1 className="font-medium text-xl">{user?.fullname}</h1>
-              <p>{user?.profile?.bio}</p>
+              <h1 className="text-xl font-semibold text-gray-800">
+                {user?.fullname}
+              </h1>
+              <p className="text-gray-600 text-sm">{user?.profile?.bio}</p>
             </div>
           </div>
-          <Button
-            onClick={() => setOpen(true)}
-            className="text-right"
-            varient="outline">
-            <Pen />
-          </Button>
+
+          {/* Edit Button */}
+          <div className="self-end sm:self-auto">
+            <Button onClick={() => setOpen(true)} variant="outline" size="sm">
+              <Pen className="w-4 h-4 mr-1" />
+              Edit
+            </Button>
+          </div>
         </div>
 
-        <div className="my-5">
-          <div className="flex items-center gap-3 my-2">
-            <Mail />
+        {/* Contact Info */}
+        <div className="mt-6 space-y-4 text-sm text-gray-700">
+          <div className="flex items-center gap-3">
+            <Mail className="w-4 h-4 text-gray-500" />
             <span>{user?.email}</span>
           </div>
-          <div className="flex items-center gap-3 my-2">
-            <Contact />
+          <div className="flex items-center gap-3">
+            <Contact className="w-4 h-4 text-gray-500" />
             <span>{user?.phoneNumber}</span>
           </div>
         </div>
 
-        <div className="my-5">
-          <h1>Skills</h1>
-          <div className="flex items-center gap-1">
-            {user?.profile?.skills.length !== 0 ? (
-              user?.profile?.skills.map((item, index) => (
-                <Badge key={index}>{item}</Badge>
+        {/* Skills */}
+        <div className="mt-6">
+          <h2 className="font-semibold text-gray-800 mb-2">Skills</h2>
+          <div className="flex flex-wrap gap-2">
+            {user?.profile?.skills?.length > 0 ? (
+              user?.profile.skills.map((skill, index) => (
+                <Badge key={index}>{skill}</Badge>
               ))
             ) : (
-              <span>Na</span>
+              <span className="text-gray-500">No skills added</span>
             )}
-            ~
           </div>
         </div>
-        <div className="grid w-full max-w-sm items-center gap-1.5">
-          <Label className="text-md font-bold "> Resume</Label>
-          {isResume ? (
+
+        {/* Resume */}
+        <div className="mt-6">
+          <Label className="text-sm font-semibold text-gray-700 mb-1 block">
+            Resume
+          </Label>
+          {isResume && user?.profile?.resume ? (
             <a
-              className="text-blue-500 w-full hover:underline cursor-pointer"
-              target="blank"
-              href="user?.profile?.resume">
-              {user?.profile?.resumeOriginalName}
+              className="text-blue-600 hover:underline text-sm break-all"
+              href={user?.profile?.resume}
+              target="_blank"
+              rel="noopener noreferrer">
+              {user?.profile?.resumeOriginalName || "Download Resume"}
             </a>
           ) : (
-            <span>Na</span>
+            <span className="text-gray-500 text-sm">No resume uploaded</span>
           )}
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl">
-        <h1>Applied Jobs</h1>
+      {/* Applied Jobs Section */}
+      <div className="max-w-4xl mx-auto bg-white shadow-md rounded-2xl px-4 py-6 sm:px-8 sm:py-10 mb-10">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">
+          Applied Jobs
+        </h2>
         <AppliedJobTable />
       </div>
+
       <UpdateProfileDialog open={open} setOpen={setOpen} />
     </div>
   );

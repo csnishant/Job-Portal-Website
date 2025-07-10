@@ -19,32 +19,43 @@ const category = [
   "Data Scientist",
 ];
 
-const CategoryCarausel = () => {
+const CategoryCarousel = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const searchJobHandler = (query) => {
     dispatch(setSearchedQuery(query));
     navigate("/browse");
   };
+
   return (
-    <div>
-      <Carousel className="w-full max-w-xl mx-auto my-20">
-        <CarouselContent>
+    <div className="w-full py-10 relative overflow-hidden">
+      <h2 className="text-center text-2xl font-bold mb-6">
+        Explore Job Categories
+      </h2>
+
+      <Carousel className="w-full max-w-4xl mx-auto relative">
+        {/* Arrows - placed outside carousel items with safe padding */}
+        <CarouselPrevious className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10" />
+        <CarouselNext className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10" />
+
+        {/* Carousel Items - padded to stay between arrows */}
+        <CarouselContent className="px-8 sm:px-10 md:px-14 gap-x-3 sm:gap-x-4">
           {category.map((cat, index) => (
-            <CarouselItem key={index} className="md:basis-1/2 lg-basis-1/3 ">
+            <CarouselItem
+              key={index}
+              className="basis-4/5 sm:basis-1/2 lg:basis-1/3">
               <Button
                 onClick={() => searchJobHandler(cat)}
-                className=" bg-transparent   bg-gradient-to-br from-pink-400 to-red-700">
+                className=" py-6 text-base font-medium text-white bg-gradient-to-br from-pink-400 to-red-600 hover:from-red-600 hover:to-pink-400 transition-all rounded-xl shadow">
                 {cat}
               </Button>
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
       </Carousel>
     </div>
   );
 };
 
-export default CategoryCarausel;
+export default CategoryCarousel;
