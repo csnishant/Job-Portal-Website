@@ -74,6 +74,8 @@ Make sure you have **installed**:
 git clone https://github.com/csnishant/Job-Portal-Website.git
 cd Job-Portal-Website
 
+### Backend Setup
+
 cd Backend
 npm install
 
