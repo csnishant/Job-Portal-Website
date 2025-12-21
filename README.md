@@ -87,5 +87,21 @@ npm install
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
+```
+
+### Start backend server:
+
+```bash
+npm run dev
+```
+
+### Frontend Setup
+
+```bash
+cd Frontend
+npm install
+npm run dev
+```
+
 
 
