@@ -73,9 +73,19 @@ Make sure you have **installed**:
 ```bash
 git clone https://github.com/csnishant/Job-Portal-Website.git
 cd Job-Portal-Website
+```
 
 ### Backend Setup
 
+```bash
 cd Backend
 npm install
+```
+### Create a .env file inside Backend folder
+
+```bash
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+
 
