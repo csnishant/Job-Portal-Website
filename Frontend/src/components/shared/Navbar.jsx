@@ -74,47 +74,63 @@ const Navbar = () => {
           </ul>
 
           {/* Auth Section */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Avatar className="cursor-pointer shadow-sm">
-                <AvatarImage
-                  className="object-cover"
-                  src={user?.profile?.profilePhoto || ""}
-                />
-                <AvatarFallback>{user?.fullname?.[0] || "U"}</AvatarFallback>
-              </Avatar>
-            </PopoverTrigger>
-            <PopoverContent className="shadow-md bg-white rounded-md p-4 w-64 z-50">
-              <div className="flex gap-4 items-center border-b pb-3 mb-3">
-                <Avatar>
-                  <AvatarImage src={user?.profile?.profilePhoto || ""} />
+          {/* Auth Section */}
+          {user ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Avatar className="cursor-pointer shadow-sm">
+                  <AvatarImage
+                    className="object-cover"
+                    src={user?.profile?.profilePhoto || ""}
+                  />
                   <AvatarFallback>{user?.fullname?.[0] || "U"}</AvatarFallback>
                 </Avatar>
-                <div>
-                  <h4 className="font-medium">{user?.fullname}</h4>
-                  <p className="text-sm text-gray-500">
-                    {user?.profile?.bio || "Student"}
-                  </p>
+              </PopoverTrigger>
+              <PopoverContent className="shadow-md bg-white rounded-md p-4 w-64 z-50">
+                <div className="flex gap-4 items-center border-b pb-3 mb-3">
+                  <Avatar>
+                    <AvatarImage src={user?.profile?.profilePhoto || ""} />
+                    <AvatarFallback>
+                      {user?.fullname?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h4 className="font-medium">{user?.fullname}</h4>
+                    <p className="text-sm text-gray-500">
+                      {user?.profile?.bio || "Student"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex flex-col text-gray-700 gap-2">
-                {user?.role === "student" && (
-                  <Link
-                    to="/profile"
-                    className="flex items-center gap-2 hover:text-black">
-                    <User2 size={18} />
-                    View Profile
-                  </Link>
-                )}
-                <button
-                  onClick={logoutHandler}
-                  className="flex items-center gap-2 text-left hover:text-red-600">
-                  <LogOut size={18} />
-                  Logout
-                </button>
-              </div>
-            </PopoverContent>
-          </Popover>
+                <div className="flex flex-col text-gray-700 gap-2">
+                  {user?.role === "student" && (
+                    <Link
+                      to="/profile"
+                      className="flex items-center gap-2 hover:text-black">
+                      <User2 size={18} />
+                      View Profile
+                    </Link>
+                  )}
+                  <button
+                    onClick={logoutHandler}
+                    className="flex items-center gap-2 text-left hover:text-red-600">
+                    <LogOut size={18} />
+                    Logout
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link to="/login">
+                <Button variant="outline">Login</Button>
+              </Link>
+              <Link to="/signup">
+                <Button className="bg-[#6A38C2] hover:bg-[#5b30a6]">
+                  Signup
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Mobile Menu Icon */}
@@ -141,7 +157,10 @@ const Navbar = () => {
           {user && (
             <div className="flex items-center gap-3 p-4 border-b shadow-sm bg-gray-50">
               <Avatar className="shadow-md">
-                <AvatarImage className="object-cover" src={user?.profile?.profilePhoto || ""} />
+                <AvatarImage
+                  className="object-cover"
+                  src={user?.profile?.profilePhoto || ""}
+                />
                 <AvatarFallback>{user?.fullname?.[0] || "U"}</AvatarFallback>
               </Avatar>
               <div className="text-base font-semibold">

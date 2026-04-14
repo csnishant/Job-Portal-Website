@@ -1,45 +1,135 @@
 import { Application } from "../models/application.model.js";
 import { Job } from "../models/job.model.js";
 
+
+import { analyzeResume } from "../utils/ai.js";
+import { calculateATSScore } from "../utils/atsCalculator.js";
+import { extractTextFromPDF } from "../utils/parser.js";
+
+export const checkATSScore = async (req, res) => {
+  try {
+    const userId = req.id;
+    const jobId = req.params.id;
+    const resumePath = req.file.path;
+
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    const resumeText = await extractTextFromPDF(resumePath);
+
+    const result = await analyzeResume(resumeText, job.description);
+
+ 
+    // 🔥 STORE TEMP ATS RESULT
+    let application = await Application.findOne({
+      job: jobId,
+      applicant: userId,
+    });
+
+    if (!application) {
+      application = await Application.create({
+        job: jobId,
+        applicant: userId,
+      });
+    }
+
+    application.atsScore = result.score;
+    application.missingKeywords = result.missingKeywords;
+    application.matchedKeywords = result.matchedKeywords;
+    application.isATSChecked = true;
+
+    await application.save();
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+
+export const improveResume = async (req, res) => {
+  try {
+    const { resumeText, jobDescription } = req.body;
+
+    const prompt = `
+Improve this resume based on job description.
+
+Return improved resume content.
+
+Resume:
+${resumeText}
+
+Job Description:
+${jobDescription}
+`;
+
+    const response = await groq.chat.completions.create({
+      model: "llama3-8b-8192",
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    return res.json({
+      improvedResume: response.choices[0].message.content,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 export const applyJob = async (req, res) => {
   try {
     const userId = req.id;
     const jobId = req.params.id;
+
     if (!jobId) {
       return res.status(400).json({
         message: "Job id is required.",
         success: false,
       });
     }
-    // check if the user has already applied for the job
-    const existingApplication = await Application.findOne({
+
+    const application = await Application.findOne({
       job: jobId,
       applicant: userId,
     });
 
-    if (existingApplication) {
+    // ❌ ATS CHECK NAHI KIYA
+    if (!application || !application.isATSChecked) {
       return res.status(400).json({
-        message: "You have already applied for this jobs",
+        message: "Please check ATS score before applying.",
         success: false,
       });
     }
 
-    // check if the jobs exists
+    // ❌ LOW SCORE
+    if (application.atsScore < 50) {
+      return res.status(400).json({
+        message: "ATS score too low. Improve resume first.",
+        success: false,
+      });
+    }
+
+    // ❌ Already applied (final submit)
+    if (application.status === "applied") {
+      return res.status(400).json({
+        message: "You have already applied.",
+        success: false,
+      });
+    }
+
+    // ✅ FINAL APPLY
+    application.status = "applied";
+    await application.save();
+
     const job = await Job.findById(jobId);
-    if (!job) {
-      return res.status(404).json({
-        message: "Job not found",
-        success: false,
-      });
-    }
-    // create a new application
-    const newApplication = await Application.create({
-      job: jobId,
-      applicant: userId,
-    });
-
-    job.applications.push(newApplication._id);
+    job.applications.push(application._id);
     await job.save();
+
     return res.status(201).json({
       message: "Job applied successfully.",
       success: true,
