@@ -5,7 +5,6 @@ import { Job } from "../models/job.model.js";
 import { analyzeResume } from "../utils/ai.js";
 import { calculateATSScore } from "../utils/atsCalculator.js";
 import { extractTextFromPDF } from "../utils/parser.js";
-
 export const checkATSScore = async (req, res) => {
   try {
     const userId = req.id;
@@ -19,10 +18,16 @@ export const checkATSScore = async (req, res) => {
 
     const resumeText = await extractTextFromPDF(resumePath);
 
+    // 🔥 VALIDATION (IMPORTANT)
+    if (!resumeText || resumeText.length < 20) {
+      return res.status(400).json({
+        success: false,
+        message: "Resume text not extracted properly",
+      });
+    }
+
     const result = await analyzeResume(resumeText, job.description);
 
- 
-    // 🔥 STORE TEMP ATS RESULT
     let application = await Application.findOne({
       job: jobId,
       applicant: userId,
@@ -36,8 +41,8 @@ export const checkATSScore = async (req, res) => {
     }
 
     application.atsScore = result.score;
-    application.missingKeywords = result.missingKeywords;
     application.matchedKeywords = result.matchedKeywords;
+    application.missingKeywords = result.missingKeywords;
     application.isATSChecked = true;
 
     await application.save();
