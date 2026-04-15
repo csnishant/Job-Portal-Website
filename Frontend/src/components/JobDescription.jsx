@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { setSingleJob } from "@/redux/jobSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { APPLICATION_API_END_POINT, JOB_API_END_POINT } from "@/utils/constant";
+import { APPLICATION_API_END_POINT, JOB_API_END_POINT, USER_API_END_POINT } from "@/utils/constant";
 import { toast } from "sonner";
 import {
   Loader2,
@@ -16,6 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import AIAnalysisReport from "./AIAnalysisReport"; // Import the component
+import { setUser } from "@/redux/authSlice";
 
 const JobDescription = () => {
   const { singleJob } = useSelector((store) => store.job);
@@ -35,33 +36,57 @@ const JobDescription = () => {
   const jobId = params.id;
   const dispatch = useDispatch();
 
-  const checkATSHandler = async () => {
-    if (!resume) {
-      toast.error("Please upload a resume first.");
-      return;
-    }
-    try {
-      setLoading(true);
-      const formData = new FormData();
-      formData.append("resume", resume);
-      const res = await axios.post(
-        `${APPLICATION_API_END_POINT}/check-ats/${jobId}`,
-        formData,
+const checkATSHandler = async () => {
+  // Validation: Check agar file hai ya profile me resume hai
+  if (!resume && !user?.profile?.resume) {
+    toast.error("Please upload a resume or update your profile.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    // --- STEP 1: Agar Naya Resume select kiya hai, pehle use update karein ---
+    if (resume) {
+      const updateFormData = new FormData();
+      updateFormData.append("resume", resume);
+
+      const updateRes = await axios.post(
+        `${USER_API_END_POINT}/update-resume`, // Aapka naya seprate endpoint
+        updateFormData,
         {
           headers: { "Content-Type": "multipart/form-data" },
           withCredentials: true,
         },
       );
-      if (res.data.success) {
-        setAtsData(res.data.data);
-        toast.success(`Analysis Complete: ${res.data.data.score}% Match`);
+
+      if (updateRes.data.success) {
+        // Redux update karein taaki UI sync ho jaye
+        dispatch(setUser(updateRes.data.user));
+        toast.success("Resume updated to profile!");
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Error checking ATS");
-    } finally {
-      setLoading(false);
     }
-  };
+
+    // --- STEP 2: ATS Check API call karein ---
+    // Ab hum backend ko bata rahe hain ki profile se data uthaye (Empty body)
+    const res = await axios.post(
+      `${APPLICATION_API_END_POINT}/check-ats/${jobId}`,
+      {}, // No data needed in body as it's now synced to profile
+      { withCredentials: true },
+    );
+
+    if (res.data.success) {
+      setAtsData(res.data.data);
+      toast.success(`Analysis Complete: ${res.data.data.score}% Match`);
+      setResume(null); // File input clear karne ke liye
+    }
+  } catch (error) {
+    console.error(error);
+    toast.error(error.response?.data?.message || "Error checking ATS");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const applyJobHandler = async () => {
     try {
@@ -140,16 +165,29 @@ const JobDescription = () => {
                 <p className="text-xs font-bold text-gray-500 uppercase">
                   Apply with AI Assistant
                 </p>
+
+                {/* Show current resume name if it exists and no new file is chosen */}
+                {user?.profile?.resume && !resume && (
+                  <div className="text-xs text-violet-600 font-medium bg-violet-50 p-2 rounded border border-violet-100">
+                    Using Profile:{" "}
+                    <span className="font-bold">
+                      {user.profile.resumeOriginalName || "Current Resume"}
+                    </span>
+                  </div>
+                )}
+
                 <input
                   type="file"
                   accept=".pdf"
                   onChange={(e) => setResume(e.target.files[0])}
                   className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-100 file:text-violet-700 hover:file:bg-violet-200"
                 />
+
                 <div className="flex gap-3">
                   <Button
                     onClick={checkATSHandler}
-                    disabled={loading || !resume}
+                    // Enable button if there is a new resume OR an existing profile resume
+                    disabled={loading || (!resume && !user?.profile?.resume)}
                     variant="outline"
                     className="flex-1 border-violet-200 text-violet-700 hover:bg-violet-50">
                     {loading ? (
@@ -158,18 +196,8 @@ const JobDescription = () => {
                       "AI Check"
                     )}
                   </Button>
-                  <Button
-                    onClick={applyJobHandler}
-                    disabled={!atsData || atsData.score < 50}
-                    className={`flex-1 rounded-lg font-bold ${!atsData || atsData.score < 50 ? "bg-gray-300" : "bg-violet-700 hover:bg-violet-800 shadow-md transition-all"}`}>
-                    Apply Now
-                  </Button>
+                  {/* ... rest of your buttons */}
                 </div>
-                {atsData && atsData.score < 50 && (
-                  <p className="text-[10px] text-red-500 font-bold text-center italic mt-1">
-                    *Score too low. Improve resume to unlock application.
-                  </p>
-                )}
               </div>
             ) : (
               <Button

@@ -1,62 +1,103 @@
 import { Application } from "../models/application.model.js";
 import { Job } from "../models/job.model.js";
 
-
+import path from "path";
 import { analyzeResume } from "../utils/ai.js";
 
 import { extractTextFromPDF } from "../utils/parser.js";
+import { User } from "../models/user.model.js";
+import getDataUri from "../utils/datauri.js";
+import cloudinary from "../utils/cloudinary.js";
 
+
+import axios from "axios";
+import fs from "fs";
 
 export const checkATSScore = async (req, res) => {
   try {
     const userId = req.id;
     const jobId = req.params.id;
-    const resumePath = req.file.path;
+    const file = req.file; // This will be undefined if no new file is selected
 
+    const user = await User.findById(userId);
     const job = await Job.findById(jobId);
-    if (!job) {
-      return res.status(404).json({ message: "Job not found" });
-    }
 
-    const resumeText = await extractTextFromPDF(resumePath);
+    if (!user)
+      return res
+        .status(404)
+        .json({ message: "User not found", success: false });
+    if (!job)
+      return res.status(404).json({ message: "Job not found", success: false });
 
-    // 🔥 VALIDATION (IMPORTANT)
-    if (!resumeText || resumeText.length < 20) {
+    let resumeText = "";
+
+    // --- LOGIC GATE ---
+    if (file) {
+      // SCENARIO 1: New file uploaded
+      // ONLY call getDataUri here because 'file' is guaranteed to exist
+      const fileUri = getDataUri(file);
+      const cloudResponse = await cloudinary.uploader.upload(fileUri.content);
+
+      // Update User Profile with new resume automatically
+      user.profile.resume = cloudResponse.secure_url;
+      user.profile.resumeOriginalName = file.originalname;
+      await user.save();
+
+      // Extract text from the multer temp path
+      resumeText = await extractTextFromPDF(file.path);
+
+      // Clean up multer file
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+    } else if (user.profile.resume) {
+      // SCENARIO 2: Use Existing Resume (No file uploaded)
+      // Do NOT call getDataUri here. Instead, download the existing Cloudinary PDF.
+      const response = await axios.get(user.profile.resume, {
+        responseType: "arraybuffer",
+      });
+      const tempPath = `./uploads/${Date.now()}_existing_resume.pdf`;
+      fs.writeFileSync(tempPath, response.data);
+
+      resumeText = await extractTextFromPDF(tempPath);
+
+      // Clean up temp download
+      if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+    } else {
       return res.status(400).json({
+        message: "No resume found in profile or upload.",
         success: false,
-        message: "Resume text not extracted properly",
       });
     }
 
+    // 3. AI Analysis
     const result = await analyzeResume(resumeText, job.description);
 
+    // 4. Update Application
     let application = await Application.findOne({
       job: jobId,
       applicant: userId,
     });
-
     if (!application) {
-      application = await Application.create({
-        job: jobId,
-        applicant: userId,
-      });
+      application = await Application.create({ job: jobId, applicant: userId });
     }
 
     application.atsScore = result.score;
-    application.matchedKeywords = result.matchedKeywords;
-    application.missingKeywords = result.missingKeywords;
     application.isATSChecked = true;
-
     await application.save();
 
     return res.status(200).json({
       success: true,
       data: result,
+      user, // Send back updated user so frontend Redux stays in sync
     });
   } catch (error) {
-    console.log(error);
+    console.log("ATS Check Error:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error", success: false });
   }
 };
+
+
 
 
 export const improveResume = async (req, res) => {

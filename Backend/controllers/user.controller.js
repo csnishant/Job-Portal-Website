@@ -185,19 +185,9 @@ export const logout = async (req, res) => {
 };
 export const updateProfile = async (req, res) => {
   try {
-    console.log(req.file); // Debug to check if file is being uploaded
     const { fullname, email, phoneNumber, bio, skills } = req.body;
+    const userId = req.id; // middleware authentication se aayi ID
 
-    const file = req.file;
-    // cloudinary ayega idhar
-    const fileUri = getDataUri(file);
-    const cloudResponse = await cloudinary.uploader.upload(fileUri.content);
-
-    let skillsArray;
-    if (skills) {
-      skillsArray = skills.split(",");
-    }
-    const userId = req.id; // middleware authentication
     let user = await User.findById(userId);
 
     if (!user) {
@@ -206,22 +196,22 @@ export const updateProfile = async (req, res) => {
         success: false,
       });
     }
-    // updating data
+
+    // Updating Text Data
     if (fullname) user.fullname = fullname;
     if (email) user.email = email;
     if (phoneNumber) user.phoneNumber = phoneNumber;
-    if (bio) user.profile.bio = bio;
-    if (skills) user.profile.skills = skillsArray;
 
-    // resume comes later here...
-    if (cloudResponse) {
-      user.profile.resume = cloudResponse.secure_url; // save the cloudinary url
-      user.profile.resumeOriginalName = file.originalname; // Save the original file name
+    // Profile nested fields
+    if (bio) user.profile.bio = bio;
+    if (skills) {
+      user.profile.skills = skills.split(",");
     }
 
     await user.save();
 
-    user = {
+    // Object prepare for frontend
+    const updatedUser = {
       _id: user._id,
       fullname: user.fullname,
       email: user.email,
@@ -231,11 +221,39 @@ export const updateProfile = async (req, res) => {
     };
 
     return res.status(200).json({
-      message: "Profile updated successfully.",
-      user,
+      message: "Profile details updated successfully.",
+      user: updatedUser,
       success: true,
     });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const updateResume = async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file)
+      return res.status(400).json({ message: "No file.", success: false });
+
+    const fileUri = getDataUri(file);
+    const cloudResponse = await cloudinary.uploader.upload(fileUri.content);
+
+    const user = await User.findById(req.id);
+    if (user) {
+      user.profile.resume = cloudResponse.secure_url;
+      user.profile.resumeOriginalName = file.originalname;
+      await user.save();
+    }
+
+    return res.status(200).json({
+      message: "Resume updated.",
+      user, // 🔥 Ye user object return hona zaroori hai frontend ke liye
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Error", success: false });
   }
 };
