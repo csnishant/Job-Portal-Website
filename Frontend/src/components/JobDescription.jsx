@@ -7,7 +7,15 @@ import { setSingleJob } from "@/redux/jobSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { APPLICATION_API_END_POINT, JOB_API_END_POINT } from "@/utils/constant";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import {
+  Loader2,
+  Calendar,
+  MapPin,
+  Briefcase,
+  IndianRupee,
+  Users,
+} from "lucide-react";
+import AIAnalysisReport from "./AIAnalysisReport"; // Import the component
 
 const JobDescription = () => {
   const { singleJob } = useSelector((store) => store.job);
@@ -15,8 +23,7 @@ const JobDescription = () => {
 
   const isInitiallyApplied =
     singleJob?.applications?.some(
-      (application) =>
-        application.applicant === user?._id || application === user?._id,
+      (app) => app.applicant === user?._id || app === user?._id,
     ) || false;
 
   const [isApplied, setIsApplied] = useState(isInitiallyApplied);
@@ -47,7 +54,7 @@ const JobDescription = () => {
       );
       if (res.data.success) {
         setAtsData(res.data.data);
-        toast.success(`ATS Score: ${res.data.data.score}%`);
+        toast.success(`Analysis Complete: ${res.data.data.score}% Match`);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Error checking ATS");
@@ -60,7 +67,9 @@ const JobDescription = () => {
     try {
       const res = await axios.get(
         `${APPLICATION_API_END_POINT}/apply/${jobId}`,
-        { withCredentials: true },
+        {
+          withCredentials: true,
+        },
       );
       if (res.data.success) {
         setIsApplied(true);
@@ -101,126 +110,165 @@ const JobDescription = () => {
   }, [jobId, dispatch, user?._id]);
 
   return (
-    <div className="max-w-7xl mx-auto my-10 p-5 rounded-md shadow-lg border border-gray-100">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-bold text-2xl">{singleJob?.title}</h1>
-          <p className="text-sm text-gray-500 font-medium">
-            {singleJob?.company?.name || "Company Name"}
-          </p>
-          <div className="flex items-center gap-2 mt-4">
-            <Badge className={"text-blue-700 font-bold"} variant="ghost">
-              {singleJob?.position} Positions
-            </Badge>
-            <Badge className={"text-[#F83002] font-bold"} variant="ghost">
-              {singleJob?.jobType}
-            </Badge>
-            <Badge className={"text-[#7209b7] font-bold"} variant="ghost">
-              {singleJob?.salary} LPA
-            </Badge>
-            <Badge className={"text-green-600 font-bold"} variant="ghost">
-              {singleJob?.location}
-            </Badge>
-          </div>
-        </div>
-
-        {!isApplied ? (
-          <div className="flex flex-col gap-2 items-end">
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={(e) => setResume(e.target.files[0])}
-              className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700"
-            />
-            <div className="flex gap-2">
-              <Button
-                onClick={checkATSHandler}
-                disabled={loading || !resume}
-                variant="outline">
-                {loading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  "Check ATS Score"
-                )}
-              </Button>
-              <Button
-                onClick={applyJobHandler}
-                disabled={!atsData || atsData.score < 50}
-                className={`rounded-lg ${!atsData || atsData.score < 50 ? "bg-gray-400" : "bg-[#7209b7] hover:bg-[#5f079b]"}`}>
-                Apply Now
-              </Button>
+    <div className="max-w-7xl mx-auto my-10 px-5">
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row items-start justify-between gap-6">
+          <div>
+            <h1 className="font-extrabold text-3xl text-gray-900">
+              {singleJob?.title}
+            </h1>
+            <p className="text-violet-600 font-semibold text-lg mt-1">
+              {singleJob?.company?.name}
+            </p>
+            <div className="flex flex-wrap items-center gap-3 mt-6">
+              <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-none px-4 py-1 rounded-full">
+                {singleJob?.position} Positions
+              </Badge>
+              <Badge className="bg-red-50 text-red-600 hover:bg-red-50 border-none px-4 py-1 rounded-full">
+                {singleJob?.jobType}
+              </Badge>
+              <Badge className="bg-purple-50 text-purple-700 hover:bg-purple-50 border-none px-4 py-1 rounded-full">
+                {singleJob?.salary} LPA
+              </Badge>
             </div>
-            {atsData && (
-              <p
-                className={`text-xs font-bold ${atsData.score < 50 ? "text-red-500" : "text-green-600"}`}>
-                Score: {atsData.score}%{" "}
-                {atsData.score < 50 && "(Min. 50% required)"}
-              </p>
+          </div>
+
+          <div className="w-full md:w-auto">
+            {!isApplied ? (
+              <div className="flex flex-col gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <p className="text-xs font-bold text-gray-500 uppercase">
+                  Apply with AI Assistant
+                </p>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => setResume(e.target.files[0])}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-100 file:text-violet-700 hover:file:bg-violet-200"
+                />
+                <div className="flex gap-3">
+                  <Button
+                    onClick={checkATSHandler}
+                    disabled={loading || !resume}
+                    variant="outline"
+                    className="flex-1 border-violet-200 text-violet-700 hover:bg-violet-50">
+                    {loading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      "AI Check"
+                    )}
+                  </Button>
+                  <Button
+                    onClick={applyJobHandler}
+                    disabled={!atsData || atsData.score < 50}
+                    className={`flex-1 rounded-lg font-bold ${!atsData || atsData.score < 50 ? "bg-gray-300" : "bg-violet-700 hover:bg-violet-800 shadow-md transition-all"}`}>
+                    Apply Now
+                  </Button>
+                </div>
+                {atsData && atsData.score < 50 && (
+                  <p className="text-[10px] text-red-500 font-bold text-center italic mt-1">
+                    *Score too low. Improve resume to unlock application.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <Button
+                disabled
+                className="w-full md:w-48 bg-gray-800 text-white rounded-xl py-6 cursor-not-allowed">
+                Already Applied
+              </Button>
             )}
           </div>
-        ) : (
-          <Button
-            disabled
-            className="bg-gray-600 rounded-lg cursor-not-allowed">
-            Already Applied
-          </Button>
-        )}
-      </div>
-
-      <div className="my-10">
-        <h1 className="border-b-2 border-b-gray-300 font-medium py-4 text-lg">
-          Job Details
-        </h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
-          <DetailRow label="Role" value={singleJob?.title} />
-          <DetailRow label="Location" value={singleJob?.location} />
-          <DetailRow
-            label="Experience"
-            value={`${singleJob?.experienceLevel} years`}
-          />
-          <DetailRow label="Salary" value={`${singleJob?.salary} LPA`} />
-          <DetailRow label="Job Type" value={singleJob?.jobType} />
-          <DetailRow
-            label="Total Applicants"
-            value={singleJob?.applications?.length}
-          />
-          <DetailRow
-            label="Posted Date"
-            value={singleJob?.createdAt?.split("T")[0]}
-          />
         </div>
 
-        <div className="my-6">
-          <h2 className="font-bold text-gray-800">Description:</h2>
-          <p className="text-gray-600 mt-1 leading-relaxed">
-            {singleJob?.description}
-          </p>
-        </div>
+        {/* AI Report Integration */}
+        {atsData && <AIAnalysisReport data={atsData} />}
 
-        {/* Requirements Array Render */}
-        {singleJob?.requirements?.length > 0 && (
-          <div className="my-6">
-            <h2 className="font-bold text-gray-800">Requirements:</h2>
-            <ul className="list-disc list-inside mt-2 text-gray-600">
-              {singleJob.requirements.map((req, index) => (
-                <li key={index} className="mt-1">
-                  {req}
-                </li>
-              ))}
-            </ul>
+        <hr className="my-10 border-gray-100" />
+
+        {/* Job Details Grid */}
+        <div className="space-y-10">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <Briefcase size={20} className="text-gray-400" /> Job Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-12">
+              <IconDetail
+                label="Location"
+                value={singleJob?.location}
+                icon={<MapPin size={18} />}
+              />
+              <IconDetail
+                label="Experience"
+                value={`${singleJob?.experienceLevel} Years`}
+                icon={<Users size={18} />}
+              />
+              <IconDetail
+                label="Annual Salary"
+                value={`${singleJob?.salary} LPA`}
+                icon={<IndianRupee size={18} />}
+              />
+              <IconDetail
+                label="Employment Type"
+                value={singleJob?.jobType}
+                icon={<Briefcase size={18} />}
+              />
+              <IconDetail
+                label="Applicants"
+                value={singleJob?.applications?.length}
+                icon={<Users size={18} />}
+              />
+              <IconDetail
+                label="Posted On"
+                value={singleJob?.createdAt?.split("T")[0]}
+                icon={<Calendar size={18} />}
+              />
+            </div>
           </div>
-        )}
+
+          <div>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">
+              Role Description
+            </h2>
+            <p className="text-gray-600 leading-relaxed text-base whitespace-pre-line">
+              {singleJob?.description}
+            </p>
+          </div>
+
+          {singleJob?.requirements?.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold text-gray-800 mb-4">
+                Core Requirements
+              </h2>
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {singleJob.requirements.map((req, index) => (
+                  <li
+                    key={index}
+                    className="flex items-start gap-2 text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-violet-400 shrink-0" />
+                    {req}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-// Reusable component for clean UI
-const DetailRow = ({ label, value }) => (
-  <h1 className="font-bold my-1">
-    {label}:{" "}
-    <span className="pl-4 font-normal text-gray-700">{value || "N/A"}</span>
-  </h1>
+// Clean Helper Component
+const IconDetail = ({ label, value, icon }) => (
+  <div className="flex items-start gap-3">
+    <div className="text-gray-400 mt-1">{icon}</div>
+    <div>
+      <p className="text-xs text-gray-400 font-bold uppercase tracking-wide">
+        {label}
+      </p>
+      <p className="text-gray-800 font-medium">{value || "Not Specified"}</p>
+    </div>
+  </div>
 );
 
 export default JobDescription;
