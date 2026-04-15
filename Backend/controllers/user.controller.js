@@ -107,14 +107,17 @@ export const register = async (req, res) => {
 // -----------old login code------------------
 export const login = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    // 1. 'role' ko destructuring se hata dein
+    const { email, password } = req.body;
 
-    if (!email || !password || !role) {
+    // 2. Role check validation hata dein
+    if (!email || !password) {
       return res.status(400).json({
         message: "Something is missing",
         success: false,
       });
     }
+
     let user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({
@@ -122,6 +125,7 @@ export const login = async (req, res) => {
         success: false,
       });
     }
+
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) {
       return res.status(400).json({
@@ -129,13 +133,9 @@ export const login = async (req, res) => {
         success: false,
       });
     }
-    // check role is correct or not
-    if (role !== user.role) {
-      return res.status(400).json({
-        message: "Account doesn't exist with current role.",
-        success: false,
-      });
-    }
+
+    // YAHAN SE "role !== user.role" WALI IF CONDITION DELETE KAR DEIN
+    // Kyunki ab hum user ke database wale role ko hi final maan rahe hain.
 
     const tokenData = {
       userId: user._id,
@@ -144,12 +144,13 @@ export const login = async (req, res) => {
       expiresIn: "1d",
     });
 
-    user = {
+    // User object prepare karein (role automatically database se aa jayega)
+    const userResponse = {
       _id: user._id,
       fullname: user.fullname,
       email: user.email,
       phoneNumber: user.phoneNumber,
-      role: user.role,
+      role: user.role, // Database wala role frontend ko bhej rahe hain
       profile: user.profile,
     };
 
@@ -161,15 +162,17 @@ export const login = async (req, res) => {
         sameSite: "strict",
       })
       .json({
-        message: `Welcome back ${user.fullname}`,
-        user,
+        message: `Welcome back ${userResponse.fullname}`,
+        user: userResponse,
         success: true,
       });
   } catch (error) {
     console.log(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
-
 export const logout = async (req, res) => {
   try {
     return res.status(200).cookie("token", "", { maxAge: 0 }).json({

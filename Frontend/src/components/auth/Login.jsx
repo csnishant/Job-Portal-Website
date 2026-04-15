@@ -16,7 +16,7 @@ const Login = () => {
   const [input, setInput] = useState({
     email: "",
     password: "",
-    role: "",
+
   });
 
   const { loading, user } = useSelector((store) => store.auth);
@@ -27,27 +27,33 @@ const Login = () => {
     setInput({ ...input, [e.target.name]: e.target.value });
   };
 
-  const submitHandler = async (e) => {
-    e.preventDefault();
-    try {
-      dispatch(setLoading(true));
-      const res = await axios.post(`${USER_API_END_POINT}/login`, input, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
-      if (res.data.success) {
-        dispatch(setUser(res.data.user));
-        navigate("/");
-        toast.success(res.data.message);
-      }
-    } catch (error) {
-      toast.error(error.response.data.message);
-    } finally {
-      dispatch(setLoading(false));
-    }
-  };
+ const submitHandler = async (e) => {
+   e.preventDefault();
+   try {
+     dispatch(setLoading(true));
+     const res = await axios.post(`${USER_API_END_POINT}/login`, input, {
+       headers: { "Content-Type": "application/json" },
+       withCredentials: true,
+     });
+
+     if (res.data.success) {
+       const loggedInUser = res.data.user;
+       dispatch(setUser(loggedInUser));
+       toast.success(res.data.message);
+
+       // Automatic Role Detection & Navigation
+       if (loggedInUser.role === "recruiter") {
+         navigate("/admin/companies"); // Recruiter dashboard
+       } else {
+         navigate("/"); // Student home page
+       }
+     }
+   } catch (error) {
+     toast.error(error.response?.data?.message || "Something went wrong");
+   } finally {
+     dispatch(setLoading(false));
+   }
+ };
 
   useEffect(() => {
     if (user) {
@@ -100,32 +106,6 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Role */}
-          <div>
-            <Label className="text-sm text-gray-600 mb-2 block">Role</Label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                <input
-                  type="radio"
-                  name="role"
-                  value="student"
-                  checked={input.role === "student"}
-                  onChange={changeEventHandler}
-                />
-                Student
-              </label>
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                <input
-                  type="radio"
-                  name="role"
-                  value="recruiter"
-                  checked={input.role === "recruiter"}
-                  onChange={changeEventHandler}
-                />
-                Recruiter
-              </label>
-            </div>
-          </div>
 
           {/* Submit Button */}
           {loading ? (
