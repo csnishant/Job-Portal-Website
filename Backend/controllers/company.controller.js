@@ -54,7 +54,7 @@ export const getCompany = async (req, res) => {
 export const getCompanyById = async (req, res) => {
   try {
     const companyId = req.params.id;
-     console.log("Company ID btao:", req.params.id);
+    console.log("Company ID btao:", req.params.id);
     const company = await Company.findById(companyId);
     if (!company) {
       return res.status(404).json({
@@ -73,13 +73,25 @@ export const getCompanyById = async (req, res) => {
 export const updateCompany = async (req, res) => {
   try {
     const { name, description, website, location } = req.body;
-    console.log(name, description, website, location);
+
     const file = req.file;
-    // idhar cloudinary ayega
-    const fileUri = getDataUri(file);
-    const cloudResponse = await cloudinary.uploader.upload(fileUri.content);
-    const logo = cloudResponse.secure_url;
-    const updateData = { name, description, website, location, logo };
+    let logo;
+
+    // Check karein ki kya user ne nayi file bheji hai?
+    if (file) {
+      const fileUri = getDataUri(file);
+      const cloudResponse = await cloudinary.uploader.upload(fileUri.content);
+      logo = cloudResponse.secure_url; // Naya logo URL
+    }
+
+    // updateData object banayein
+    const updateData = { name, description, website, location };
+
+    // Agar logo upload hua hai, toh hi usey updateData mein add karein
+    // Warna purana logo database mein waisa hi rahega
+    if (logo) {
+      updateData.logo = logo;
+    }
 
     const company = await Company.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
@@ -91,11 +103,17 @@ export const updateCompany = async (req, res) => {
         success: false,
       });
     }
+
     return res.status(200).json({
       message: "Company information updated.",
       success: true,
+      company, // Optional: updated company data bhi bhej sakte hain
     });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+    });
   }
 };

@@ -3,8 +3,10 @@ import { Job } from "../models/job.model.js";
 
 
 import { analyzeResume } from "../utils/ai.js";
-import { calculateATSScore } from "../utils/atsCalculator.js";
+
 import { extractTextFromPDF } from "../utils/parser.js";
+
+
 export const checkATSScore = async (req, res) => {
   try {
     const userId = req.id;
